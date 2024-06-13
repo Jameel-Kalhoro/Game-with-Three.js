@@ -11,6 +11,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // variables
 let player;
 let mixer;
+let action;
 
 // Create a renderer and attach it to our document
 const renderer = new THREE.WebGLRenderer();
@@ -31,9 +32,15 @@ const dracoloader = new DRACOLoader();
 dracoloader.setDecoderPath('/examples/jsm/libs/draco/');
 loader.setDRACOLoader(dracoloader);
 loader.load('/last4.glb', function(glb){
+    console.log();
     scene.add(glb.scene);
     glb.scene.position.set(0, 0, 0);
     glb.scene.scale.set(1, 1, 1);
+    glb.scene.traverse(function(child) {
+        if (child.isMesh ) {
+            console.log(child);
+        }
+    });
 }, function(xhr){
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 }, function(error){
@@ -43,12 +50,12 @@ loader.load('/last4.glb', function(glb){
 loader.load('/Soldier.glb', function(glb){
     player = glb;
     scene.add(player.scene);
-    player.scene.position.set(-2, -.2, -34);
+    player.scene.position.set(-2, -.25, -34);
     player.scene.scale.set(1, 1, 1);
     player.scene.rotation.y += 3;
     console.log(player.animations);
     mixer = new THREE.AnimationMixer(player.scene);
-    const action = mixer.clipAction(player.animations[0]);
+    action = mixer.clipAction(player.animations[0]);
     action.play();
 }, function(xhr){
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -56,29 +63,155 @@ loader.load('/Soldier.glb', function(glb){
     console.error('An error happened', error);
 });
 
-
-// creating orbit controls for mouse movement
-const controls = new OrbitControls(camera,renderer.domElement);
-controls.enableDamping = true; // Enable smooth damping (inertia)
-controls.dampingFactor = 0.25; // Set damping factor
-controls.screenSpacePanning = false; // Disable panning
-controls.maxPolarAngle = Math.PI / 2; // Restrict the vertical angle
+// camera set to back of character
+camera.position.set(-2, 1.5, -36.5);
+camera.rotation.set(0,3.1,);
 
 
-// Move the camera away from the origin, down the positive z-axis
-camera.position.z = -5;
-camera.position.y = 10;
-camera.position.x = -10;
+// Track mouse movement
+let mouseX = 0;
+let mouseY = 0;
+document.addEventListener('mousemove', (event) => {
+    mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+    mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+});
+
+function updateCameraPosition() {
+    if (!player) return;
+
+    const radius = 2.5; // Distance from the player
+    const angleX = mouseX * Math.PI; // Convert mouse position to angle
+
+    const offsetX = radius * Math.sin(angleX + Math.PI);
+    const offsetZ = radius * Math.cos(angleX + Math.PI);
+
+    camera.position.set(
+        player.scene.position.x + offsetX,
+        player.scene.position.y + 1.5, // Keep the Y coordinate fixed
+        player.scene.position.z + offsetZ
+    );
+    camera.lookAt(player.scene.position);
+}
+
+// Track key presses
+const keys = {
+    w: false,
+    a: false,
+    s: false,
+    d: false
+};
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'w') keys.w = true;
+    if (event.key === 'a') keys.a = true;
+    if (event.key === 's') keys.s = true;
+    if (event.key === 'd') keys.d = true;
+});
+
+document.addEventListener('keyup', (event) => {
+    if (event.key === 'w') keys.w = false;
+    if (event.key === 'a') keys.a = false;
+    if (event.key === 's') keys.s = false;
+    if (event.key === 'd') keys.d = false;
+});
+
+// Update character position and animation based on key presses
+function updatePlayerPosition() {
+    if (!player) return;
+
+    const speed = 0.02;
+    const moveDirection = new THREE.Vector3(0, 0, 0);
+
+    if (keys.w) {
+        moveDirection.z += 1;
+    }
+    if (keys.s) {
+        moveDirection.z -= 1;
+    }
+    if (keys.a) {
+        moveDirection.x += 1;
+    }
+    if (keys.d) {
+        moveDirection.x -= 1;
+    }
+
+    // Normalize move direction to avoid faster diagonal movement
+    if (moveDirection.lengthSq() > 0) {
+        moveDirection.normalize();
+    }
+
+    // Update player's position based on move direction and speed
+    player.scene.position.add(moveDirection.clone().multiplyScalar(speed));
+
+    // Update player's rotation to face the movement direction
+    if (moveDirection.lengthSq() > 0) {
+        const targetAngle = Math.atan2(-moveDirection.x, -moveDirection.z);
+        player.scene.rotation.y = THREE.MathUtils.lerp(player.scene.rotation.y, targetAngle, 0.1);
+    }
+
+    // Update animations based on movement
+    if (moveDirection.lengthSq() > 0) {
+        if (action !== mixer.clipAction(player.animations[3])) {
+            mixer.stopAllAction();
+            action = mixer.clipAction(player.animations[3]); 
+            action.play();
+        }
+    } else {
+        if (action !== mixer.clipAction(player.animations[0])) {
+            mixer.stopAllAction();
+            action = mixer.clipAction(player.animations[0]); 
+            action.play();
+        }
+    }
+}
+
+// Function to check collision between player and specific objects (e.g., walls)
+function checkCollision() {
+    if (!player) return false;
+
+    const playerBox = new THREE.Box3().setFromObject(player.scene);
+    let collisionDetected = false;
+
+    // Iterate over the children of glb.scene and check for collision
+    for (const object of glb.scene.children) {
+        // Skip checking certain types of objects (e.g., Group or meshes)
+        if (object instanceof THREE.Group || object instanceof THREE.Mesh) {
+            continue;
+        }
+
+        // Check collision with specific objects (e.g., walls)
+        const objectBox = new THREE.Box3().setFromObject(object);
+
+        if (playerBox.intersectsBox(objectBox)) {
+            console.log('Collision with object:', object);
+            collisionDetected = true;
+            break; // Exit loop early since collision is detected
+        }
+    }
+
+    return collisionDetected;
+}
+
+
+
+
+
 
 // Create a function to animate our scene
 function animate() {
     requestAnimationFrame(animate);
 
-    //update controls
-    controls.update();
+
+    //update cameras position
+    updateCameraPosition();
+
+    //update player psoition
+    updatePlayerPosition();
+
+    // checkCollision();
 
     //mixer
-    if(mixer) mixer.update();
+    if(mixer) mixer.update(0.01);
 
     // Render the scene from the perspective of the camera
     renderer.render(scene, camera);
@@ -86,3 +219,13 @@ function animate() {
 
 // Run the animation function for the first time to kick things off
 animate();
+
+
+window.addEventListener('resize', () => {
+    // Update camera
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    // Update renderer
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
