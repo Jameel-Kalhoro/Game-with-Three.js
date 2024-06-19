@@ -16,6 +16,8 @@ let player;
 let mixer;
 let action;
 const objectsToCheck = [];
+// Specific small objects for bounding box collision detection
+const smallObjects = ['C-skpfile-1', 'C-skpfile-2', 'C-skpfile-3', 'C-skpfile-4', 'C-skpfile-5'];
 
 // Create a renderer and attach it to our document
 const renderer = new THREE.WebGLRenderer();
@@ -38,13 +40,25 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(5, 5, 5).normalize();
 scene.add(directionalLight);
 
+//adding planes
+// const planeGeometry = new THREE.PlaneGeometry(4, 4); // Adjust width and height as needed
+// const planeMaterial = new THREE.MeshBasicMaterial({
+//     color: 0x00ff00, // Green color, adjust as needed
+//     transparent: false,
+//     opacity: 0.5 // Adjust opacity as needed (0.0 to 1.0)
+// });
+// const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+// planeMesh.position.set(-4, 0, -5); // Adjust position as needed
+// scene.add(planeMesh);
+
+
 // Load scene environment here
 const loader = new GLTFLoader();
 const dracoloader = new DRACOLoader();
 dracoloader.setDecoderPath('/examples/jsm/libs/draco/');
 loader.setDRACOLoader(dracoloader);
 
-loader.load('/untitled21.glb', function(glb) {
+loader.load('/untitle11d.glb', function(glb) {
     scene.add(glb.scene);
     glb.scene.position.set(0, 0, 0);
     glb.scene.scale.set(1, 1, 1);
@@ -58,7 +72,10 @@ loader.load('/untitled21.glb', function(glb) {
             }            
         }
     });
-    console.log("index of door "+findObjectIndexByName("DoorFrame002"));
+    console.log("index of door "+findObjectIndexByName("wall-23"));
+    // scene.remove(objectsToCheck[52].name);
+    console.log(objectsToCheck);
+    removeObjectByName('wall-23');
 }, function(xhr) {
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 }, function(error) {
@@ -74,6 +91,16 @@ function findObjectIndexByName(name) {
         }
     }
     return -1; // Return -1 if object with specified name is not found
+}
+
+function removeObjectByName(objectName) {
+    const index = objectsToCheck.findIndex(obj => obj.name === objectName);
+    if (index !== -1) {
+        objectsToCheck.splice(index, 1);
+        console.log(`Object '${objectName}' removed from objectsToCheck.`);
+    } else {
+        console.log(`Object '${objectName}' not found in objectsToCheck.`);
+    }
 }
 
 loader.load('/Soldier.glb', function(glb) {
@@ -153,27 +180,54 @@ const raycaster = new THREE.Raycaster();
 const collisionThreshold = 1;
 
 function checkCollision(direction) {
-    if (!player) return false;
+    if (!player || !player.scene) return false;
 
-    const playerPosition = player.scene.position.clone();
-    const directionVector = direction.clone().normalize();
-    raycaster.set(playerPosition, directionVector);
+    // Get the player's current position
+    const playerPosition = player.scene.position.clone().add(direction);
 
-    const intersects = raycaster.intersectObjects(objectsToCheck, true);
+    // Create a bounding box for the player
+    const playerBox = new THREE.Box3().setFromObject(player.scene);
+    playerBox.expandByScalar(-0.1); // Adjust for player's bounding box size
 
-    if (intersects.length > 0 && intersects[0].distance < collisionThreshold) {
-        console.log('Collision with object:', intersects[0].object);
-        outlinePass.selectedObjects = [intersects[0].object];
-        return true;
+    // Check collision with all objects
+    let collided = false;
+
+    for (const object of objectsToCheck) {
+        if (smallObjects.includes(object.name)) {
+            // For small objects, use Box3 collision detection
+            const objectBox = new THREE.Box3().setFromObject(object);
+            if (playerBox.intersectsBox(objectBox)) {
+                console.log('Collision with small object:', object);
+                outlinePass.selectedObjects = [object];
+                collided = true;
+            }
+        } else {
+            // For other objects, use Raycaster collision detection
+            const raycaster = new THREE.Raycaster();
+            const directionVector = direction.clone().normalize();
+            raycaster.set(playerPosition, directionVector);
+
+            const intersects = raycaster.intersectObject(object, true);
+            if (intersects.length > 0 && intersects[0].distance < collisionThreshold) {
+                console.log('Collision with object:', intersects[0].object);
+                // outlinePass.selectedObjects = [intersects[0].object];
+                collided = true;
+            }
+        }
+
+        if (collided) break; // Exit loop if collision detected
     }
 
-    outlinePass.selectedObjects = [];
-    return false;
+    if (!collided) {
+        outlinePass.selectedObjects = [];
+    }
+
+    return collided;
 }
 
-// Update player position based on keyboard input and collision detection
+
 function updatePlayerPosition() {
-    if (!player) return;
+    if (!player || !player.scene) return;
 
     const speed = 0.04;
     const moveDirection = new THREE.Vector3(0, 0, 0);
@@ -183,42 +237,28 @@ function updatePlayerPosition() {
     cameraDirection.y = 0;
     cameraDirection.normalize();
 
-    if (keys.w) {
-        const forwardDirection = cameraDirection.clone().multiplyScalar(speed);
-        if (!checkCollision(forwardDirection)) {
-            moveDirection.add(forwardDirection);
+    if (keys.w || keys.s || keys.a || keys.d) {
+        if (keys.w) {
+            moveDirection.copy(cameraDirection).multiplyScalar(speed);
+        } else if (keys.s) {
+            moveDirection.copy(cameraDirection).multiplyScalar(-speed);
+        } else if (keys.a) {
+            moveDirection.set(cameraDirection.z, 0, -cameraDirection.x).normalize().multiplyScalar(speed);
+        } else if (keys.d) {
+            moveDirection.set(-cameraDirection.z, 0, cameraDirection.x).normalize().multiplyScalar(speed);
         }
-    }
-    if (keys.s) {
-        const backwardDirection = cameraDirection.clone().multiplyScalar(-speed);
-        if (!checkCollision(backwardDirection)) {
-            moveDirection.add(backwardDirection);
-        }
-    }
-    if (keys.a) {
-        const leftDirection = new THREE.Vector3(cameraDirection.z, 0, -cameraDirection.x).normalize().multiplyScalar(speed);
-        if (!checkCollision(leftDirection)) {
-            moveDirection.add(leftDirection);
-        }
-    }
-    if (keys.d) {
-        const rightDirection = new THREE.Vector3(-cameraDirection.z, 0, cameraDirection.x).normalize().multiplyScalar(speed);
-        if (!checkCollision(rightDirection)) {
-            moveDirection.add(rightDirection);
-        }
-    }
 
-    if (moveDirection.lengthSq() > 0) {
-        moveDirection.normalize();
-    }
+        // Check collision only if there is movement
+        if (!checkCollision(moveDirection)) {
+            player.scene.position.add(moveDirection);
+        }
 
-    player.scene.position.add(moveDirection.clone().multiplyScalar(speed));
-
-    if (moveDirection.lengthSq() > 0) {
+        // Rotate player to face movement direction
         const targetAngle = Math.atan2(-moveDirection.x, -moveDirection.z);
         player.scene.rotation.y = THREE.MathUtils.lerp(player.scene.rotation.y, targetAngle, 0.1);
     }
 
+    // Play correct animation based on movement
     if (moveDirection.lengthSq() > 0) {
         if (action !== mixer.clipAction(player.animations[3])) {
             mixer.stopAllAction();
@@ -233,6 +273,8 @@ function updatePlayerPosition() {
         }
     }
 }
+
+   
 
 // Animation loop function
 function animate() {
