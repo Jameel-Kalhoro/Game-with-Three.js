@@ -14,7 +14,9 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // variables
 let player;
 let mixer;
+let mixer1;
 let action;
+let door1;
 const objectsToCheck = [];
 // Specific small objects for bounding box collision detection
 const smallObjects = ['C-skpfile-1', 'C-skpfile-2', 'C-skpfile-3', 'C-skpfile-4', 'C-skpfile-5'];
@@ -67,6 +69,31 @@ objectsToCheck.push(planeMesh2);
 scene.add(planeMesh2);
 
 
+const planeGeometry3 = new THREE.PlaneGeometry(1, 4); // Adjust width and height as needed
+const planeMaterial3 = new THREE.MeshBasicMaterial({
+    color: 0x00ff00, // Green color, adjust as needed
+    transparent: true,
+    opacity: 0 // Adjust opacity as needed (0.0 to 1.0)
+});
+const planeMesh3 = new THREE.Mesh(planeGeometry3, planeMaterial3);
+planeMesh3.position.set(.5, 0, -14); // Adjust position as needed
+planeMesh3.rotation.set(0,-5.2,0);
+objectsToCheck.push(planeMesh3);
+scene.add(planeMesh3);
+
+const planeGeometry4 = new THREE.PlaneGeometry(2, 4); // Adjust width and height as needed
+const planeMaterial4 = new THREE.MeshBasicMaterial({
+    color: 0x00ff00, // Green color, adjust as needed
+    transparent: true,
+    opacity: 0 // Adjust opacity as needed (0.0 to 1.0)
+});
+const planeMesh4 = new THREE.Mesh(planeGeometry4, planeMaterial4);
+planeMesh4.position.set(-9, 0, -13.6); // Adjust position as needed
+planeMesh4.rotation.set(0,4.3,0);
+objectsToCheck.push(planeMesh4);
+scene.add(planeMesh4);
+
+
 
 // Load scene environment here
 const loader = new GLTFLoader();
@@ -74,7 +101,7 @@ const dracoloader = new DRACOLoader();
 dracoloader.setDecoderPath('/examples/jsm/libs/draco/');
 loader.setDRACOLoader(dracoloader);
 
-loader.load('/untitle11d.glb', function(glb) {
+loader.load('/unt1ed.glb', function(glb) {
     scene.add(glb.scene);
     glb.scene.position.set(0, 0, 0);
     glb.scene.scale.set(1, 1, 1);
@@ -88,9 +115,9 @@ loader.load('/untitle11d.glb', function(glb) {
             }            
         }
     });
-    console.log("index of door "+findObjectIndexByName("wall-23"));
+    // console.log("index of door "+findObjectIndexByName("DoorFrame"));
     // scene.remove(objectsToCheck[52].name);
-    console.log(objectsToCheck);
+    // console.log(objectsToCheck[737]);
     removeObjectByName('wall-23');
 }, function(xhr) {
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -134,6 +161,31 @@ loader.load('/Soldier.glb', function(glb) {
 }, function(error) {
     console.error('An error happened', error);
 });
+
+
+// adding doors
+loader.load('/utled.glb', function(glb) {
+    door1 = glb;
+    scene.add(door1.scene);
+    door1.scene.scale.set(.9, 1, .9);
+    door1.scene.position.set(-10.3, 0, -24.55);
+    door1.scene.rotation.y += 7.3;
+    console.log(door1.animations);
+    mixer = new THREE.AnimationMixer(door1.scene);
+    action = mixer.clipAction(door1.animations[0]);
+    action.play();
+    door1.scene.traverse(function(child) {
+        if (child.isMesh) {
+            objectsToCheck.push(child);           
+        }
+    });
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
+
+
 
 // temporary code for setting objects
 // const controls = new OrbitControls(camera, renderer.domElement);
@@ -226,7 +278,13 @@ function checkCollision(direction) {
             const intersects = raycaster.intersectObject(object, true);
             if (intersects.length > 0 && intersects[0].distance < collisionThreshold) {
                 console.log('Collision with object:', intersects[0].object);
-                // outlinePass.selectedObjects = [intersects[0].object];
+                outlinePass.selectedObjects = [intersects[0].object];
+                if(intersects[0].object.name === 'CTRL_Hole'){
+                    console.log('door1');
+                    intersects[0].object.removeFromParent();
+                    scene.remove(intersects[0].object);
+                    removeObjectByName(intersects[0].object.name);
+                }
                 collided = true;
             }
         }
