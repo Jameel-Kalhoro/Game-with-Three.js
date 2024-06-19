@@ -41,15 +41,31 @@ directionalLight.position.set(5, 5, 5).normalize();
 scene.add(directionalLight);
 
 //adding planes
-// const planeGeometry = new THREE.PlaneGeometry(4, 4); // Adjust width and height as needed
-// const planeMaterial = new THREE.MeshBasicMaterial({
-//     color: 0x00ff00, // Green color, adjust as needed
-//     transparent: false,
-//     opacity: 0.5 // Adjust opacity as needed (0.0 to 1.0)
-// });
-// const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-// planeMesh.position.set(-4, 0, -5); // Adjust position as needed
-// scene.add(planeMesh);
+const planeGeometry = new THREE.PlaneGeometry(2, 4); // Adjust width and height as needed
+const planeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x00ff00, // Green color, adjust as needed
+    transparent: true,
+    opacity: 0 // Adjust opacity as needed (0.0 to 1.0)
+});
+const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+planeMesh.position.set(-9, 0, -13.6); // Adjust position as needed
+planeMesh.rotation.set(0,-5.2,0);
+objectsToCheck.push(planeMesh);
+scene.add(planeMesh);
+
+
+const planeGeometry2 = new THREE.PlaneGeometry(1, 4); // Adjust width and height as needed
+const planeMaterial2 = new THREE.MeshBasicMaterial({
+    color: 0x00ff00, // Green color, adjust as needed
+    transparent: true,
+    opacity: 0 // Adjust opacity as needed (0.0 to 1.0)
+});
+const planeMesh2 = new THREE.Mesh(planeGeometry2, planeMaterial2);
+planeMesh2.position.set(.5, 0, -14.5); // Adjust position as needed
+planeMesh2.rotation.set(0,4.2,0);
+objectsToCheck.push(planeMesh2);
+scene.add(planeMesh2);
+
 
 
 // Load scene environment here
