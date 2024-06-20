@@ -15,9 +15,12 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 let player;
 let mixer;
 let mixer1;
+let mixer2;
+let mixer3;
+let mixer4;
 let action;
-let door1;
 const objectsToCheck = [];
+
 // Specific small objects for bounding box collision detection
 const smallObjects = ['C-skpfile-1', 'C-skpfile-2', 'C-skpfile-3', 'C-skpfile-4', 'C-skpfile-5'];
 
@@ -76,7 +79,7 @@ const planeMaterial3 = new THREE.MeshBasicMaterial({
     opacity: 0 // Adjust opacity as needed (0.0 to 1.0)
 });
 const planeMesh3 = new THREE.Mesh(planeGeometry3, planeMaterial3);
-planeMesh3.position.set(.5, 0, -14); // Adjust position as needed
+planeMesh3.position.set(.5, 0, -14.5); // Adjust position as needed
 planeMesh3.rotation.set(0,-5.2,0);
 objectsToCheck.push(planeMesh3);
 scene.add(planeMesh3);
@@ -115,26 +118,12 @@ loader.load('/unt1ed.glb', function(glb) {
             }            
         }
     });
-    // console.log("index of door "+findObjectIndexByName("DoorFrame"));
-    // scene.remove(objectsToCheck[52].name);
-    // console.log(objectsToCheck[737]);
     removeObjectByName('wall-23');
 }, function(xhr) {
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 }, function(error) {
     console.error('An error happened', error);
 });
-
-//temporary array's item index finder
-// Function to find index of object with name "DoorFrame002" in objectsToCheck
-function findObjectIndexByName(name) {
-    for (let i = 0; i < objectsToCheck.length; i++) {
-        if (objectsToCheck[i].name === name) {
-            return i;
-        }
-    }
-    return -1; // Return -1 if object with specified name is not found
-}
 
 function removeObjectByName(objectName) {
     const index = objectsToCheck.findIndex(obj => obj.name === objectName);
@@ -149,10 +138,9 @@ function removeObjectByName(objectName) {
 loader.load('/Soldier.glb', function(glb) {
     player = glb;
     scene.add(player.scene);
-    player.scene.position.set(-2, 0, -26);
+    player.scene.position.set(-13, 0, -2);
     player.scene.scale.set(.8, .8, .8);
-    player.scene.rotation.y += 3;
-    console.log(player.animations);
+    player.scene.rotation.y += 6;
     mixer = new THREE.AnimationMixer(player.scene);
     action = mixer.clipAction(player.animations[0]);
     action.play();
@@ -165,16 +153,71 @@ loader.load('/Soldier.glb', function(glb) {
 
 // adding doors
 loader.load('/utled.glb', function(glb) {
-    door1 = glb;
-    scene.add(door1.scene);
-    door1.scene.scale.set(.9, 1, .9);
-    door1.scene.position.set(-10.3, 0, -24.55);
-    door1.scene.rotation.y += 7.3;
-    console.log(door1.animations);
-    mixer = new THREE.AnimationMixer(door1.scene);
-    action = mixer.clipAction(door1.animations[0]);
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(-10.3, 0, -24.55);
+    glb.scene.rotation.y += 7.3;
+    mixer = new THREE.AnimationMixer(glb.scene);
+    action = mixer.clipAction(glb.animations[0]);
     action.play();
-    door1.scene.traverse(function(child) {
+    glb.scene.traverse(function(child) {
+        if (child.isMesh) {
+            objectsToCheck.push(child);           
+        }
+    });
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
+
+loader.load('/utled.glb', function(glb) {
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(1, 0, -15.38);
+    glb.scene.rotation.y += 10.5;
+    mixer = new THREE.AnimationMixer(glb.scene);
+    action = mixer.clipAction(glb.animations[0]);
+    action.play();
+    glb.scene.traverse(function(child) {
+        if (child.isMesh) {
+            objectsToCheck.push(child);           
+        }
+    });
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
+
+loader.load('/utled.glb', function(glb) {
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(2.15, 0, -4.17);
+    glb.scene.rotation.y += 10.5;
+    mixer = new THREE.AnimationMixer(glb.scene);
+    action = mixer.clipAction(glb.animations[0]);
+    action.play();
+    glb.scene.traverse(function(child) {
+        if (child.isMesh) {
+            objectsToCheck.push(child);           
+        }
+    });
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
+
+loader.load('/utled.glb', function(glb) {
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(-9.75, 0, -12.25);
+    glb.scene.rotation.y += 7.3;
+    mixer = new THREE.AnimationMixer(glb.scene);
+    action = mixer.clipAction(glb.animations[0]);
+    action.play();
+    glb.scene.traverse(function(child) {
         if (child.isMesh) {
             objectsToCheck.push(child);           
         }
@@ -186,6 +229,77 @@ loader.load('/utled.glb', function(glb) {
 });
 
 
+// adding flags
+loader.load('/japan.glb', function(glb) {
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(2, 4.5, -4.5);
+    glb.scene.rotation.y += 7.3;
+    mixer1 = new THREE.AnimationMixer(glb.scene);
+    let action1 = mixer1.clipAction(glb.animations[0]);
+    action1.play();
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
+
+loader.load('/italy.glb', function(glb) {
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(-9.5, 4.5, -12.5);
+    glb.scene.rotation.y += 7.3;
+    mixer2 = new THREE.AnimationMixer(glb.scene);
+    let action2 = mixer2.clipAction(glb.animations[0]);
+    action2.play();
+    glb.scene.traverse(function(child) {
+        if (child.isMesh) {
+            objectsToCheck.push(child);           
+        }
+    });
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
+
+loader.load('/greece.glb', function(glb) {
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(-9.5, 4.5, -25.5);
+    glb.scene.rotation.y += 7.3;
+    mixer3 = new THREE.AnimationMixer(glb.scene);
+    let action3 = mixer3.clipAction(glb.animations[0]);
+    action3.play();
+    glb.scene.traverse(function(child) {
+        if (child.isMesh) {
+            objectsToCheck.push(child);           
+        }
+    });
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
+
+loader.load('/egypt.glb', function(glb) {
+    scene.add(glb.scene);
+    glb.scene.scale.set(.9, 1, .9);
+    glb.scene.position.set(2.5, 4.5, -17);
+    glb.scene.rotation.y += 7.3;
+    mixer4 = new THREE.AnimationMixer(glb.scene);
+    let action4 = mixer4.clipAction(glb.animations[0]);
+    action4.play();
+    glb.scene.traverse(function(child) {
+        if (child.isMesh) {
+            objectsToCheck.push(child);           
+        }
+    });
+}, function(xhr) {
+    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+}, function(error) {
+    console.error('An error happened', error);
+});
 
 // temporary code for setting objects
 // const controls = new OrbitControls(camera, renderer.domElement);
@@ -207,7 +321,7 @@ document.addEventListener('mousemove', (event) => {
 function updateCameraPosition() {
     if (!player) return;
 
-    const radius = 2.5; // Distance from the player
+    const radius = 3; // Distance from the player
     const angleX = mouseX * Math.PI; // Convert mouse position to angle
 
     const offsetX = radius * Math.sin(angleX + Math.PI);
@@ -277,8 +391,8 @@ function checkCollision(direction) {
 
             const intersects = raycaster.intersectObject(object, true);
             if (intersects.length > 0 && intersects[0].distance < collisionThreshold) {
-                console.log('Collision with object:', intersects[0].object);
-                outlinePass.selectedObjects = [intersects[0].object];
+                // console.log('Collision with object:', intersects[0].object);
+                // outlinePass.selectedObjects = [intersects[0].object];
                 if(intersects[0].object.name === 'CTRL_Hole'){
                     console.log('door1');
                     intersects[0].object.removeFromParent();
@@ -358,6 +472,10 @@ function animate() {
     updatePlayerPosition();
 
     if (mixer) mixer.update(0.01);
+    if (mixer1) mixer1.update(0.01);
+    if (mixer2) mixer2.update(0.01);
+    if (mixer3) mixer3.update(0.01);
+    if (mixer4) mixer4.update(0.01);
 
     composer.render();
 }
