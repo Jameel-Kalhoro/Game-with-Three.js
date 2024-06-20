@@ -181,6 +181,9 @@ loader.load('/utled.glb', function(glb) {
     action.play();
     glb.scene.traverse(function(child) {
         if (child.isMesh) {
+            if(child.name === 'CTRL_Hole'){
+                child.name = 'CTRL_Hole1';
+            }
             objectsToCheck.push(child);           
         }
     });
@@ -200,6 +203,9 @@ loader.load('/utled.glb', function(glb) {
     action.play();
     glb.scene.traverse(function(child) {
         if (child.isMesh) {
+            if(child.name === 'CTRL_Hole'){
+                child.name = 'CTRL_Hole2';
+            }
             objectsToCheck.push(child);           
         }
     });
@@ -219,6 +225,9 @@ loader.load('/utled.glb', function(glb) {
     action.play();
     glb.scene.traverse(function(child) {
         if (child.isMesh) {
+            if(child.name === 'CTRL_Hole'){
+                child.name = 'CTRL_Hole3';
+            }
             objectsToCheck.push(child);           
         }
     });
@@ -252,11 +261,6 @@ loader.load('/italy.glb', function(glb) {
     mixer2 = new THREE.AnimationMixer(glb.scene);
     let action2 = mixer2.clipAction(glb.animations[0]);
     action2.play();
-    glb.scene.traverse(function(child) {
-        if (child.isMesh) {
-            objectsToCheck.push(child);           
-        }
-    });
 }, function(xhr) {
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 }, function(error) {
@@ -271,11 +275,6 @@ loader.load('/greece.glb', function(glb) {
     mixer3 = new THREE.AnimationMixer(glb.scene);
     let action3 = mixer3.clipAction(glb.animations[0]);
     action3.play();
-    glb.scene.traverse(function(child) {
-        if (child.isMesh) {
-            objectsToCheck.push(child);           
-        }
-    });
 }, function(xhr) {
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 }, function(error) {
@@ -290,11 +289,6 @@ loader.load('/egypt.glb', function(glb) {
     mixer4 = new THREE.AnimationMixer(glb.scene);
     let action4 = mixer4.clipAction(glb.animations[0]);
     action4.play();
-    glb.scene.traverse(function(child) {
-        if (child.isMesh) {
-            objectsToCheck.push(child);           
-        }
-    });
 }, function(xhr) {
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 }, function(error) {
@@ -393,8 +387,7 @@ function checkCollision(direction) {
             if (intersects.length > 0 && intersects[0].distance < collisionThreshold) {
                 // console.log('Collision with object:', intersects[0].object);
                 // outlinePass.selectedObjects = [intersects[0].object];
-                if(intersects[0].object.name === 'CTRL_Hole'){
-                    console.log('door1');
+                if(intersects[0].object.name === 'CTRL_Hole' || intersects[0].object.name === 'CTRL_Hole1' || intersects[0].object.name === 'CTRL_Hole2' || intersects[0].object.name === 'CTRL_Hole3'){
                     intersects[0].object.removeFromParent();
                     scene.remove(intersects[0].object);
                     removeObjectByName(intersects[0].object.name);
