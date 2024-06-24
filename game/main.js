@@ -1,12 +1,13 @@
 // main.js
 import * as THREE from "three";
-import { DRACOLoader, GLTFLoader, OrbitControls } from "three/examples/jsm/Addons.js";
+import { DRACOLoader, FirstPersonControls, GLTFLoader, OrbitControls, PointerLockControls } from "three/examples/jsm/Addons.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
 
 // Create a scene
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
 
 // Create a camera, which determines what we'll see when we render the scene
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -27,6 +28,8 @@ const smallObjects = ['C-skpfile-1', 'C-skpfile-2', 'C-skpfile-3', 'C-skpfile-4'
 // Create a renderer and attach it to our document
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 // Post-processing
@@ -42,8 +45,14 @@ const light = new THREE.AmbientLight(0xffffff, 1); // Ambient light to make sure
 scene.add(light);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(5, 5, 5).normalize();
+directionalLight.position.set(5, 1, 1);
+directionalLight.castShadow = true; // Enable shadows for directional light
 scene.add(directionalLight);
+
+const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight2.position.set(1,0,4);
+directionalLight2.castShadow = true; // Enable shadows for directional light
+scene.add(directionalLight2);
 
 //adding planes
 const planeGeometry = new THREE.PlaneGeometry(2, 4); // Adjust width and height as needed
@@ -108,13 +117,21 @@ loader.load('/unt1ed.glb', function(glb) {
     scene.add(glb.scene);
     glb.scene.position.set(0, 0, 0);
     glb.scene.scale.set(1, 1, 1);
-    
+    glb.scene.receiveShadow= true;
+    glb.scene.castShadow= true;
     // Create an array to store children to be removed
     glb.scene.traverse(function(child) {
         if (child.isMesh) {
             // Add children to objectsToCheck based on your condition
             if (!child.name.startsWith('_(Loose_En') && child.name !== 'G-Object060_1' && child.name !== 'wall-4' && child.name !== 'wall-44' && child.name !== 'wall-56' && child.name !== 'wall-51') {
+                if(child.name === 'wall-23'){
+                    child.removeFromParent();
+                    scene.remove(child);
+                }
                 objectsToCheck.push(child);
+            }else{
+                child.castShadow= true;
+                child.receiveShadow = true;
             }            
         }
     });
@@ -137,10 +154,21 @@ function removeObjectByName(objectName) {
 
 loader.load('/Soldier.glb', function(glb) {
     player = glb;
+    player.scene.opacity = 1;
     scene.add(player.scene);
     player.scene.position.set(-13, 0, -2);
-    player.scene.scale.set(.8, .8, .8);
+    player.scene.scale.set(.8, 1, .8);
     player.scene.rotation.y += 6;
+    player.scene.castShadow = true;
+    player.scene.receiveShadow = true;
+    player.scene.traverse(function(child) {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.material.transparent = true;
+            child.material.opacity = 0
+        }
+    });
     mixer = new THREE.AnimationMixer(player.scene);
     action = mixer.clipAction(player.animations[0]);
     action.play();
@@ -298,11 +326,20 @@ loader.load('/egypt.glb', function(glb) {
 // temporary code for setting objects
 // const controls = new OrbitControls(camera, renderer.domElement);
 // controls.target.set(-2, 1.5, -34); // Set the initial target for the controls
-// controls.update(); 
+// controls.update();
 
 // Camera set to back of character
-camera.position.set(-2, 1.5, -36.5);
-camera.rotation.set(0, 3.1, 0);
+camera.position.set(-12.9, 1.3, -2.10);
+camera.rotation.set(0, -1, 0);
+
+const controls = new PointerLockControls(camera, renderer.domElement);
+document.addEventListener('click', () => {
+    controls.lock();
+}, false);
+
+
+// player light 
+
 
 // Track mouse movement
 let mouseX = 0;
@@ -312,22 +349,22 @@ document.addEventListener('mousemove', (event) => {
     mouseY = (event.clientY / window.innerHeight) * 2 - 1;
 });
 
-function updateCameraPosition() {
-    if (!player) return;
+// function updateCameraPosition() {
+//     if (!player) return;
 
-    const radius = 3; // Distance from the player
-    const angleX = mouseX * Math.PI; // Convert mouse position to angle
+//     const radius = 3; // Distance from the player
+//     const angleX = mouseX * Math.PI; // Convert mouse position to angle
 
-    const offsetX = radius * Math.sin(angleX + Math.PI);
-    const offsetZ = radius * Math.cos(angleX + Math.PI);
+//     const offsetX = radius * Math.sin(angleX + Math.PI);
+//     const offsetZ = radius * Math.cos(angleX + Math.PI);
 
-    camera.position.set(
-        player.scene.position.x + offsetX,
-        player.scene.position.y + 1.5, // Keep the Y coordinate fixed
-        player.scene.position.z + offsetZ
-    );
-    camera.lookAt(player.scene.position);
-}
+//     camera.position.set(
+//         player.scene.position.x + offsetX,
+//         player.scene.position.y + 1.5, // Keep the Y coordinate fixed
+//         player.scene.position.z + offsetZ
+//     );
+//     camera.lookAt(player.scene.position);
+// }
 
 // Track key presses
 const keys = {
@@ -410,6 +447,8 @@ function checkCollision(direction) {
 function updatePlayerPosition() {
     if (!player || !player.scene) return;
 
+    updatePlayerRotationWithMouse();
+
     const speed = 0.04;
     const moveDirection = new THREE.Vector3(0, 0, 0);
 
@@ -437,7 +476,15 @@ function updatePlayerPosition() {
         // Rotate player to face movement direction
         const targetAngle = Math.atan2(-moveDirection.x, -moveDirection.z);
         player.scene.rotation.y = THREE.MathUtils.lerp(player.scene.rotation.y, targetAngle, 0.1);
+        camera.position.copy(new THREE.Vector3(
+            player.scene.position.x,
+            player.scene.position.y + 1.25,
+            player.scene.position.z,
+        ));
+        console.log(player.scene.position);
+        
     }
+
 
     // Play correct animation based on movement
     if (moveDirection.lengthSq() > 0) {
@@ -455,14 +502,32 @@ function updatePlayerPosition() {
     }
 }
 
+// playerlight
+function updateLightPosition(){
+    directionalLight2.position.copy(new THREE.Vector3(
+        player.scene.position.x-3,
+        player.scene.position.y+2,
+        player.scene.position.z+4, 
+    ));
+}
+
+function updatePlayerRotationWithMouse() {
+    const rotationSpeed = 0.02; // Adjust this value for sensitivity
+    player.scene.rotation.y -= mouseX * rotationSpeed;
+    
+    // Optional: Reset mouseX after applying rotation to prevent continuous spinning
+    mouseX = 0;
+}
    
 
 // Animation loop function
 function animate() {
     requestAnimationFrame(animate);
 
-    updateCameraPosition();
+    // updateCameraPosition();
     updatePlayerPosition();
+    updateLightPosition();
+    // syncPlayerRotation();
 
     if (mixer) mixer.update(0.01);
     if (mixer1) mixer1.update(0.01);
@@ -475,10 +540,12 @@ function animate() {
 
 animate();
 
-// Handle window resize
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+// Resizing the window
+window.addEventListener('resize', function() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    renderer.setSize(width, height);
+    composer.setSize(width, height);
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
 });
