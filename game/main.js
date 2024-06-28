@@ -21,6 +21,7 @@ let mixer3;
 let mixer4;
 let action;
 const objectsToCheck = [];
+let isSKP = false;
 
 // Specific small objects for bounding box collision detection
 const smallObjects = ['C-skpfile-1', 'C-skpfile-2', 'C-skpfile-3', 'C-skpfile-4', 'C-skpfile-5'];
@@ -375,10 +376,16 @@ const keys = {
 };
 
 document.addEventListener('keydown', (event) => {
+    if(event.key === 'i' && isSKP){
+        document.getElementById("messageBox").style.display = 'block';
+    }
+
+
     if (event.key === 'w') keys.w = true;
     if (event.key === 'a') keys.a = true;
     if (event.key === 's') keys.s = true;
     if (event.key === 'd') keys.d = true;
+    if (event.key === 'i') iPressed = true;
 });
 
 document.addEventListener('keyup', (event) => {
@@ -413,8 +420,14 @@ function checkCollision(direction) {
                 console.log('Collision with small object:', object);
                 outlinePass.selectedObjects = [object];
                 collided = true;
+                isSKP = true;
+            } else{
+                isSKP = false;
+                document.getElementById("messageBox").style.display= 'none';
             }
+
         } else {
+            
             // For other objects, use Raycaster collision detection
             const raycaster = new THREE.Raycaster();
             const directionVector = direction.clone().normalize();
